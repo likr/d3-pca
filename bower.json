@@ -1,0 +1,22 @@
+{
+  "name": "d3-pca",
+  "version": "0.0.0",
+  "authors": [
+    "Yosuke ONOUE <onoue@likr-lab.com>"
+  ],
+  "description": "Biplot for principal component analysis",
+  "main": "d3-pca.js",
+  "license": "MIT",
+  "homepage": "https://github.com/likr/d3-pca",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "d3": "~3.5.2",
+    "numericjs": "~1.2.6"
+  }
+}
