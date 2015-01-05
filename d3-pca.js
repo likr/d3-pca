@@ -274,32 +274,47 @@ d3.pca = (function() {
           .orient('bottom')
           .scale(loadingXScale);
         svg.append('g')
+          .classed('loading-axis', true)
           .attr('transform', 'translate(' + margin + ',' + (margin + height) + ')')
           .call(loadingXAxis);
         var loadingYAxis = d3.svg.axis()
           .orient('left')
           .scale(loadingYScale);
         svg.append('g')
+          .classed('loading-axis', true)
           .attr('transform', 'translate(' + margin + ',' + margin + ')')
           .call(loadingYAxis);
         var scoreXAxis = d3.svg.axis()
           .orient('top')
           .scale(scoreXScale);
         svg.append('g')
+          .classed('score-axis', true)
           .attr('transform', 'translate(' + margin + ',' + margin + ')')
           .call(scoreXAxis);
         var scoreYAxis = d3.svg.axis()
           .orient('right')
           .scale(scoreYScale);
         svg.append('g')
+          .classed('score-axis', true)
           .attr('transform', 'translate(' + (margin + width) + ',' + margin + ')')
           .call(scoreYAxis);
-        svg.selectAll('g.tick line')
-          .attr('stroke', 'black');
-        svg.selectAll('path.domain')
+        svg.selectAll('g.loading-axis g.tick line')
+          .attr('stroke', loadingColor);
+        svg.selectAll('g.loading-axis g.tick text')
+          .attr('fill', loadingColor);
+        svg.selectAll('g.score-axis g.tick line, g.score-axis g.tick text')
+          .attr('stroke', scoreColor);
+        svg.selectAll('g.score-axis g.tick text')
+          .attr('fill', scoreColor);
+        svg.selectAll('g.loading-axis path.domain')
           .attr({
             fill: 'none',
-            stroke: 'black'
+            stroke: loadingColor
+          });
+        svg.selectAll('g.score-axis path.domain')
+          .attr({
+            fill: 'none',
+            stroke: scoreColor
           });
       });
     };
