@@ -9,6 +9,9 @@
   "license": "MIT",
   "homepage": "https://github.com/likr/d3-pca",
   "ignore": [
+    "d3-pca-example.js",
+    "index.html",
+    "data.csv",
     "**/.*",
     "node_modules",
     "bower_components",
