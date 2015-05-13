@@ -1,0 +1,28 @@
+{
+  "name": "d3-pca",
+  "version": "0.1.0",
+  "description": "Principal component analysis plugin for D3.js",
+  "main": "lib/index.js",
+  "scripts": {
+    "example": "browserify example/index.js -o example/example.js -t babelify",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/likr/d3-pca.git"
+  },
+  "author": "Yosuke ONOUE <onoue@likr-lab.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/likr/d3-pca/issues"
+  },
+  "homepage": "https://github.com/likr/d3-pca",
+  "dependencies": {
+    "d3": "^3.5.5",
+    "numeric": "^1.2.6"
+  },
+  "devDependencies": {
+    "babelify": "^6.1.0",
+    "browserify": "^10.1.3"
+  }
+}
