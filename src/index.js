@@ -24,7 +24,7 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         }
       }
 
-      var ev = eig(x, n, m);
+      const ev = eig(x, n, m);
 
       const pca1 = new Float64Array(m),
             pca2 = new Float64Array(m);
@@ -35,7 +35,7 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         pca2[i] = ev.E[j2 * m + i];
       }
 
-      var loadings = keys.map((key, i) => {
+      const loadings = keys.map((key, i) => {
         return {
           key: key,
           value: {
@@ -44,9 +44,9 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
           }
         };
       });
-      var scores = data.map((d) => {
-        var xd = 0;
-        var yd = 0;
+      const scores = data.map((d) => {
+        let xd = 0,
+            yd = 0;
         for (let i = 0, n = keys.length; i < n; ++i) {
           xd += (d.values[keys[i]] - xBar[i]) * pca1[i];
           yd += (d.values[keys[i]] - xBar[i]) * pca2[i];
@@ -60,7 +60,7 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         };
       });
 
-      var svg = d3.select(this)
+      const svg = d3.select(this)
         .attr({
           width: width + 2 * margin + 100,
           height: height + 2 * margin
@@ -82,21 +82,21 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
           fill: loadingColor
         });
 
-      var g = svg.append('g')
+      const g = svg.append('g')
         .classed('plot-area', true)
         .attr('transform', 'translate(' + margin + ',' + margin + ')');
 
-      var drag = d3.behavior.drag()
+      const drag = d3.behavior.drag()
         .on('dragstart', (d) => {
-          var mouse = d3.mouse(g.node());
+          const mouse = d3.mouse(g.node());
           d.x0 = mouse[0];
           d.y0 = mouse[1];
         })
-        .on('drag', (d) => {
-          var mouse = d3.mouse(g.node());
-          var text = d3.select(this);
-          var xd = +text.attr('x') + mouse[0] - d.x0;
-          var yd = +text.attr('y') + mouse[1] - d.y0;
+        .on('drag', function (d) {
+          const mouse = d3.mouse(g.node()),
+                text = d3.select(this),
+                xd = +text.attr('x') + mouse[0] - d.x0,
+                yd = +text.attr('y') + mouse[1] - d.y0;
           text
             .attr({
               x: xd,
@@ -113,19 +113,19 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
           d.y0 = mouse[1];
         });
 
-      var scoreXMax = d3.max(scores, (d) => Math.abs(d.value.x));
-      var scoreXScale = d3.scale.linear()
+      const scoreXMax = d3.max(scores, (d) => Math.abs(d.value.x));
+      const scoreXScale = d3.scale.linear()
         .domain([-scoreXMax, scoreXMax])
         .range([0, width])
         .nice();
-      var scoreYMax = d3.max(scores, (d) => Math.abs(d.value.y));
-      var scoreYScale = d3.scale.linear()
+      const scoreYMax = d3.max(scores, (d) => Math.abs(d.value.y));
+      const scoreYScale = d3.scale.linear()
         .domain([-scoreYMax, scoreYMax])
         .range([height, 0])
         .nice();
-      var scoresSelection = g.append('g')
+      const scoresSelection = g.append('g')
         .classed('scores', true);
-      var scoresEnterSelection = scoresSelection
+      const scoresEnterSelection = scoresSelection
         .selectAll('g.score')
         .data(scores)
         .enter()
@@ -162,19 +162,19 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .style('cursor', 'move')
         .call(drag);
 
-      var loadingXMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.x)));
-      var loadingXScale = d3.scale.linear()
+      const loadingXMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.x)));
+      const loadingXScale = d3.scale.linear()
         .domain([-loadingXMax, loadingXMax])
         .range([0, width])
         .nice();
-      var loadingYMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.y)));
-      var loadingYScale = d3.scale.linear()
+      const loadingYMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.y)));
+      const loadingYScale = d3.scale.linear()
         .domain([-loadingYMax, loadingYMax])
         .range([height, 0])
         .nice();
-      var loadingsSelection = g.append('g')
+      const loadingsSelection = g.append('g')
         .classed('loadings', true);
-      var loadingsEnterSelection = loadingsSelection
+      const loadingsEnterSelection = loadingsSelection
         .selectAll('g.loading')
         .data(loadings)
         .enter()
@@ -217,28 +217,28 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .style('cursor', 'move')
         .call(drag);
 
-      var loadingXAxis = d3.svg.axis()
+      const loadingXAxis = d3.svg.axis()
         .orient('bottom')
         .scale(loadingXScale);
       svg.append('g')
         .classed('loading-axis', true)
         .attr('transform', 'translate(' + margin + ',' + (margin + height) + ')')
         .call(loadingXAxis);
-      var loadingYAxis = d3.svg.axis()
+      const loadingYAxis = d3.svg.axis()
         .orient('left')
         .scale(loadingYScale);
       svg.append('g')
         .classed('loading-axis', true)
         .attr('transform', 'translate(' + margin + ',' + margin + ')')
         .call(loadingYAxis);
-      var scoreXAxis = d3.svg.axis()
+      const scoreXAxis = d3.svg.axis()
         .orient('top')
         .scale(scoreXScale);
       svg.append('g')
         .classed('score-axis', true)
         .attr('transform', 'translate(' + margin + ',' + margin + ')')
         .call(scoreXAxis);
-      var scoreYAxis = d3.svg.axis()
+      const scoreYAxis = d3.svg.axis()
         .orient('right')
         .scale(scoreYScale);
       svg.append('g')
