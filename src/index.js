@@ -379,16 +379,18 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
 
 const privates = new WeakMap();
 
+const accessor = (self, key, value=null) => {
+  if (value === null) {
+    return privates.get(self)[key];
+  }
+  privates.get(self)[key] = value;
+  return self;
+};
+
 class PCA {
   constructor() {
     privates.set(this, {
-    });
-  }
-
-  render() {
-    return render({
-      width: 800,
-      height: 700,
+      size: [800, 700],
       margin: 50,
       scoreColor: 'skyblue',
       loadingColor: 'orange',
@@ -397,6 +399,53 @@ class PCA {
       textSize: 9,
       circleR: 5
     });
+  }
+
+  render() {
+    const [width, height] = this.size();
+    return render({
+      width: width,
+      height: height,
+      margin: this.margin(),
+      scoreColor: this.scoreColor(),
+      loadingColor: this.loadingColor(),
+      leadColor: this.leadColor(),
+      loadingOpacity: this.loadingOpacity(),
+      textSize: this.textSize(),
+      circleR: this.circleR()
+    });
+  }
+
+  size(arg=null) {
+    return accessor(this, 'size', arg);
+  }
+
+  margin(arg=null) {
+    return accessor(this, 'margin', arg);
+  }
+
+  scoreColor(arg=null) {
+    return accessor(this, 'scoreColor', arg);
+  }
+
+  loadingColor(arg=null) {
+    return accessor(this, 'loadingColor', arg);
+  }
+
+  leadColor(arg=null) {
+    return accessor(this, 'leadColor', arg);
+  }
+
+  loadingOpacity(arg=null) {
+    return accessor(this, 'loadingOpacity', arg);
+  }
+
+  textSize(arg=null) {
+    return accessor(this, 'textSize', arg);
+  }
+
+  circleR(arg=null) {
+    return accessor(this, 'circleR', arg);
   }
 }
 
