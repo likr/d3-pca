@@ -1,68 +1,6 @@
-'use strict';
-
 import d3 from 'd3';
 import emlapack from 'emlapack';
-
-const dsyrk = emlapack.cwrap('f2c_dsyrk', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']),
-      dsyev = emlapack.cwrap('dsyev_', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']);
-
-const cov = (x, n, m) => {
-  var puplo = emlapack._malloc(1),
-      ptrans = emlapack._malloc(1),
-      pm = emlapack._malloc(4),
-      pn = emlapack._malloc(4),
-      palpha = emlapack._malloc(8),
-      plda = emlapack._malloc(4),
-      pbeta = emlapack._malloc(8),
-      pc = emlapack._malloc(m * m * 8),
-      pldc = emlapack._malloc(4),
-      c = new Float64Array(emlapack.HEAPF64.buffer, pc, m * m);
-
-  emlapack.setValue(puplo, 'U'.charCodeAt(0), 'i8');
-  emlapack.setValue(ptrans, 'N'.charCodeAt(0), 'i8');
-  emlapack.setValue(pm, m, 'i32');
-  emlapack.setValue(pn, n, 'i32');
-  emlapack.setValue(palpha, 1 / n, 'double');
-  emlapack.setValue(pbeta, 0, 'double');
-  emlapack.setValue(plda, m, 'i32');
-  emlapack.setValue(pldc, m, 'i32');
-
-  dsyrk(puplo, ptrans, pm, pn, palpha, x.byteOffset, plda, pbeta, pc, pldc);
-
-  return c;
-};
-
-const eig = (x, n, m) => {
-  const sigma = cov(x, n, m),
-        pjobz = emlapack._malloc(1),
-        puplo = emlapack._malloc(1),
-        pn = emlapack._malloc(4),
-        plda = emlapack._malloc(4),
-        pw = emlapack._malloc(m * 8),
-        plwork = emlapack._malloc(4),
-        pinfo = emlapack._malloc(4),
-        pworkopt = emlapack._malloc(4),
-        w = new Float64Array(emlapack.HEAPF64.buffer, pw, m);
-
-  emlapack.setValue(pjobz, 'V'.charCodeAt(0), 'i8');
-  emlapack.setValue(puplo, 'U'.charCodeAt(0), 'i8');
-  emlapack.setValue(pn, m, 'i32');
-  emlapack.setValue(plda, m, 'i32');
-  emlapack.setValue(plwork, -1, 'i32');
-
-  dsyev(pjobz, puplo, pn, sigma.byteOffset, plda, pw, pworkopt, plwork, pinfo);
-
-  var workopt = emlapack.getValue(pworkopt, 'double'),
-      pwork = emlapack._malloc(workopt * 8);
-  emlapack.setValue(plwork, workopt, 'i32');
-
-  dsyev(pjobz, puplo, pn, sigma.byteOffset, plda, pw, pwork, plwork, pinfo);
-
-  return {
-    E: sigma,
-    lambda: w
-  };
-};
+import eig from './eig';
 
 const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loadingOpacity, textSize, circleR}) => {
   return (selection) => {
@@ -97,7 +35,7 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         pca2[i] = ev.E[j2 * m + i];
       }
 
-      var loadings = keys.map(function(key, i) {
+      var loadings = keys.map((key, i) => {
         return {
           key: key,
           value: {
@@ -106,7 +44,7 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
           }
         };
       });
-      var scores = data.map(function(d) {
+      var scores = data.map((d) => {
         var xd = 0;
         var yd = 0;
         for (let i = 0, n = keys.length; i < n; ++i) {
@@ -149,12 +87,12 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .attr('transform', 'translate(' + margin + ',' + margin + ')');
 
       var drag = d3.behavior.drag()
-        .on('dragstart', function(d) {
+        .on('dragstart', (d) => {
           var mouse = d3.mouse(g.node());
           d.x0 = mouse[0];
           d.y0 = mouse[1];
         })
-        .on('drag', function(d) {
+        .on('drag', (d) => {
           var mouse = d3.mouse(g.node());
           var text = d3.select(this);
           var xd = +text.attr('x') + mouse[0] - d.x0;
@@ -166,29 +104,21 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
             });
           g
             .selectAll('line.lead')
-            .filter(function(d2) {
-              return d === d2;
-            })
+            .filter((d2) => d === d2)
             .attr({
               x2: xd,
               y2: yd
             });
           d.x0 = mouse[0];
           d.y0 = mouse[1];
-        })
-        .on('dragend', function(d) {
         });
 
-      var scoreXMax = d3.max(scores, function(d) {
-        return Math.abs(d.value.x);
-      });
+      var scoreXMax = d3.max(scores, (d) => Math.abs(d.value.x));
       var scoreXScale = d3.scale.linear()
         .domain([-scoreXMax, scoreXMax])
         .range([0, width])
         .nice();
-      var scoreYMax = d3.max(scores, function(d) {
-        return Math.abs(d.value.y);
-      });
+      var scoreYMax = d3.max(scores, (d) => Math.abs(d.value.y));
       var scoreYScale = d3.scale.linear()
         .domain([-scoreYMax, scoreYMax])
         .range([height, 0])
@@ -205,44 +135,26 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .append('line')
         .classed('lead', true)
         .attr({
-          x1: function(d) {
-            return scoreXScale(d.value.x);
-          },
-          y1: function(d) {
-            return scoreYScale(d.value.y);
-          },
-          x2: function(d) {
-            return scoreXScale(d.value.x);
-          },
-          y2: function(d) {
-            return scoreYScale(d.value.y);
-          },
+          x1: (d) => scoreXScale(d.value.x),
+          y1: (d) => scoreYScale(d.value.y),
+          x2: (d) => scoreXScale(d.value.x),
+          y2: (d) => scoreYScale(d.value.y),
           stroke: leadColor
         });
       scoresEnterSelection
         .append('circle')
         .attr({
-          cx: function(d) {
-            return scoreXScale(d.value.x);
-          },
-          cy: function(d) {
-            return scoreYScale(d.value.y);
-          },
+          cx: (d) => scoreXScale(d.value.x),
+          cy: (d) => scoreYScale(d.value.y),
           r: circleR,
           fill: scoreColor
         });
       scoresEnterSelection
         .append('text')
-        .text(function(d) {
-          return d.key;
-        })
+        .text((d) => d.key)
         .attr({
-          x: function(d) {
-            return scoreXScale(d.value.x);
-          },
-          y: function(d) {
-            return scoreYScale(d.value.y);
-          },
+          x: (d) => scoreXScale(d.value.x),
+          y: (d) => scoreYScale(d.value.y),
           dx: circleR,
           stroke: scoreColor,
           'font-size': textSize
@@ -250,16 +162,12 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .style('cursor', 'move')
         .call(drag);
 
-      var loadingXMax = Math.abs(d3.max(loadings, function(d) {
-        return Math.abs(d.value.x);
-      }));
+      var loadingXMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.x)));
       var loadingXScale = d3.scale.linear()
         .domain([-loadingXMax, loadingXMax])
         .range([0, width])
         .nice();
-      var loadingYMax = Math.abs(d3.max(loadings, function(d) {
-        return Math.abs(d.value.y);
-      }));
+      var loadingYMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.y)));
       var loadingYScale = d3.scale.linear()
         .domain([-loadingYMax, loadingYMax])
         .range([height, 0])
@@ -276,18 +184,10 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .append('line')
         .classed('lead', true)
         .attr({
-          x1: function(d) {
-            return loadingXScale(d.value.x);
-          },
-          y1: function(d) {
-            return loadingYScale(d.value.y);
-          },
-          x2: function(d) {
-            return loadingXScale(d.value.x);
-          },
-          y2: function(d) {
-            return loadingYScale(d.value.y);
-          },
+          x1: (d) => loadingXScale(d.value.x),
+          y1: (d) => loadingYScale(d.value.y),
+          x2: (d) => loadingXScale(d.value.x),
+          y2: (d) => loadingYScale(d.value.y),
           stroke: leadColor
         });
       loadingsEnterSelection
@@ -296,28 +196,18 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .attr({
           x1: loadingXScale(0),
           y1: loadingYScale(0),
-          x2: function(d) {
-            return loadingXScale(d.value.x);
-          },
-          y2: function(d) {
-            return loadingYScale(d.value.y);
-          },
+          x2: (d) => loadingXScale(d.value.x),
+          y2: (d) => loadingYScale(d.value.y),
           stroke: loadingColor,
           opacity: loadingOpacity,
           'marker-end': 'url(#arrowhead)'
         });
       loadingsEnterSelection
         .append('text')
-        .text(function(d) {
-          return d.key;
-        })
+        .text((d) => d.key)
         .attr({
-          x: function(d) {
-            return loadingXScale(d.value.x);
-          },
-          y: function(d) {
-            return loadingYScale(d.value.y);
-          },
+          x: (d) => loadingXScale(d.value.x),
+          y: (d) => loadingYScale(d.value.y),
           dx: 8,
           dy: 4,
           stroke: loadingColor,
