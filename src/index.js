@@ -1,66 +1,102 @@
 'use strict';
 
 import d3 from 'd3';
-import numeric from 'numeric';
+import emlapack from 'emlapack';
 
-const cov = (x) => {
-  var i, j, k, val;
-  var n = x.length;
-  var m = x[0].length;
-  var xBar = x.map(function(xi) {
-    return xi.reduce(function(a, b) {
-      return a + b;
-    }) / m;
-  });
-  var sigma = new Array(n);
-  for (i = 0; i < n; ++i) {
-    sigma[i] = new Array(n);
-    for (j = 0; j < n; ++j) {
-      sigma[i][j] = 0;
-    }
-  }
-  for (i = 0; i < n; ++i) {
-    for (j = i; j < n; ++j) {
-      val = 0;
-      for (k = 0; k < m; ++k) {
-        val += (x[i][k] - xBar[i]) * (x[j][k] - xBar[j]);
-      }
-      val /= m - 1;
-      sigma[i][j] = sigma[j][i] = val;
-    }
-  }
+const dsyrk = emlapack.cwrap('f2c_dsyrk', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']),
+      dsyev = emlapack.cwrap('dsyev_', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']);
 
-  return sigma;
+const cov = (x, n, m) => {
+  var puplo = emlapack._malloc(1),
+      ptrans = emlapack._malloc(1),
+      pm = emlapack._malloc(4),
+      pn = emlapack._malloc(4),
+      palpha = emlapack._malloc(8),
+      plda = emlapack._malloc(4),
+      pbeta = emlapack._malloc(8),
+      pc = emlapack._malloc(m * m * 8),
+      pldc = emlapack._malloc(4),
+      c = new Float64Array(emlapack.HEAPF64.buffer, pc, m * m);
+
+  emlapack.setValue(puplo, 'U'.charCodeAt(0), 'i8');
+  emlapack.setValue(ptrans, 'N'.charCodeAt(0), 'i8');
+  emlapack.setValue(pm, m, 'i32');
+  emlapack.setValue(pn, n, 'i32');
+  emlapack.setValue(palpha, 1 / n, 'double');
+  emlapack.setValue(pbeta, 0, 'double');
+  emlapack.setValue(plda, m, 'i32');
+  emlapack.setValue(pldc, m, 'i32');
+
+  dsyrk(puplo, ptrans, pm, pn, palpha, x.byteOffset, plda, pbeta, pc, pldc);
+
+  return c;
+};
+
+const eig = (x, n, m) => {
+  const sigma = cov(x, n, m),
+        pjobz = emlapack._malloc(1),
+        puplo = emlapack._malloc(1),
+        pn = emlapack._malloc(4),
+        plda = emlapack._malloc(4),
+        pw = emlapack._malloc(m * 8),
+        plwork = emlapack._malloc(4),
+        pinfo = emlapack._malloc(4),
+        pworkopt = emlapack._malloc(4),
+        w = new Float64Array(emlapack.HEAPF64.buffer, pw, m);
+
+  emlapack.setValue(pjobz, 'V'.charCodeAt(0), 'i8');
+  emlapack.setValue(puplo, 'U'.charCodeAt(0), 'i8');
+  emlapack.setValue(pn, m, 'i32');
+  emlapack.setValue(plda, m, 'i32');
+  emlapack.setValue(plwork, -1, 'i32');
+
+  dsyev(pjobz, puplo, pn, sigma.byteOffset, plda, pw, pworkopt, plwork, pinfo);
+
+  var workopt = emlapack.getValue(pworkopt, 'double'),
+      pwork = emlapack._malloc(workopt * 8);
+  emlapack.setValue(plwork, workopt, 'i32');
+
+  dsyev(pjobz, puplo, pn, sigma.byteOffset, plda, pw, pwork, plwork, pinfo);
+
+  return {
+    E: sigma,
+    lambda: w
+  };
 };
 
 const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loadingOpacity, textSize, circleR}) => {
   return (selection) => {
-    selection.each(function(data) {
-      var keys = Object.keys(data[0].values);
-      var xBar = keys.map(function(key) {
-        return data.reduce(function(sum, d) {
-          return sum + d.values[key];
-        }, 0) / data.length;
-      });
-      var sigma = cov(keys.map(function(key) {
-        return data.map(function(d) {
-          return d.values[key];
-        });
-      }));
+    selection.each(function (data) {
+      const keys = Object.keys(data[0].values),
+            n = data.length,
+            m = keys.length,
+            px = emlapack._malloc(n * m * 8),
+            x = new Float64Array(emlapack.HEAPF64.buffer, px, n * m),
+            xBar = new Float64Array(m);
+      for (let i = 0; i < m; ++i) {
+        let sum = 0;
+        for (let j = 0; j < n; ++j) {
+          const value = data[j].values[keys[i]];
+          sum += value;
+          x[j * m + i] = value;
+        }
+        xBar[i] = sum / n;
+        for (let j = 0; j < n; ++j) {
+          x[j * m + i] -= xBar[i];
+        }
+      }
 
-      var ev = numeric.eig(sigma);
-      var indices = ev.lambda.x.map(function(_, i) {
-        return i;
-      });
-      indices.sort(function(a, b) {
-        return ev.lambda.x[b] - ev.lambda.x[a];
-      });
-      var pca1 = ev.E.x.map(function(xi) {
-        return xi[indices[0]];
-      });
-      var pca2 = ev.E.x.map(function(xi) {
-        return xi[indices[1]];
-      });
+      var ev = eig(x, n, m);
+
+      const pca1 = new Float64Array(m),
+            pca2 = new Float64Array(m);
+      for (let i = 0; i < m; ++i) {
+        const j1 = m - 1,
+              j2 = m - 2;
+        pca1[i] = ev.E[j1 * m + i];
+        pca2[i] = ev.E[j2 * m + i];
+      }
+
       var loadings = keys.map(function(key, i) {
         return {
           key: key,
@@ -71,18 +107,17 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         };
       });
       var scores = data.map(function(d) {
-        var x = 0;
-        var y = 0;
-        var i, n;
-        for (i = 0, n = keys.length; i < n; ++i) {
-          x += (d.values[keys[i]] - xBar[i]) * pca1[i];
-          y += (d.values[keys[i]] - xBar[i]) * pca2[i];
+        var xd = 0;
+        var yd = 0;
+        for (let i = 0, n = keys.length; i < n; ++i) {
+          xd += (d.values[keys[i]] - xBar[i]) * pca1[i];
+          yd += (d.values[keys[i]] - xBar[i]) * pca2[i];
         }
         return {
           key: d.name,
           value: {
-            x: x,
-            y: y
+            x: xd,
+            y: yd
           }
         };
       });
@@ -122,12 +157,12 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
         .on('drag', function(d) {
           var mouse = d3.mouse(g.node());
           var text = d3.select(this);
-          var x = +text.attr('x') + mouse[0] - d.x0;
-          var y = +text.attr('y') + mouse[1] - d.y0;
+          var xd = +text.attr('x') + mouse[0] - d.x0;
+          var yd = +text.attr('y') + mouse[1] - d.y0;
           text
             .attr({
-              x: x,
-              y: y
+              x: xd,
+              y: yd
             });
           g
             .selectAll('line.lead')
@@ -135,8 +170,8 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
               return d === d2;
             })
             .attr({
-              x2: x,
-              y2: y
+              x2: xd,
+              y2: yd
             });
           d.x0 = mouse[0];
           d.y0 = mouse[1];
