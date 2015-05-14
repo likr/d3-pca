@@ -2,7 +2,7 @@ import d3 from 'd3';
 import emlapack from 'emlapack';
 import eig from './eig';
 
-const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loadingOpacity, textSize, circleR}) => {
+const render = ({index1, index2, width, height, margin, scoreColor, loadingColor, leadColor, loadingOpacity, textSize, circleR}) => {
   return (selection) => {
     selection.each(function (data) {
       const keys = Object.keys(data[0].values),
@@ -29,8 +29,8 @@ const render = ({width, height, margin, scoreColor, loadingColor, leadColor, loa
       const pca1 = new Float64Array(m),
             pca2 = new Float64Array(m);
       for (let i = 0; i < m; ++i) {
-        const j1 = m - 1,
-              j2 = m - 2;
+        const j1 = m - 1 - index1,
+              j2 = m - 1 - index2;
         pca1[i] = ev.E[j1 * m + i];
         pca2[i] = ev.E[j2 * m + i];
       }
@@ -280,6 +280,8 @@ const accessor = (self, key, value=null) => {
 class PCA {
   constructor() {
     privates.set(this, {
+      index1: 0,
+      index2: 1,
       size: [800, 700],
       margin: 50,
       scoreColor: 'skyblue',
@@ -294,6 +296,8 @@ class PCA {
   render() {
     const [width, height] = this.size();
     return render({
+      index1: this.index1(),
+      index2: this.index2(),
       width: width,
       height: height,
       margin: this.margin(),
@@ -304,6 +308,14 @@ class PCA {
       textSize: this.textSize(),
       circleR: this.circleR()
     });
+  }
+
+  index1(arg=null) {
+    return accessor(this, 'index1', arg);
+  }
+
+  index2(arg=null) {
+    return accessor(this, 'index2', arg);
   }
 
   size(arg=null) {
