@@ -1,4 +1,4 @@
-import Renderer from './renderer';
-import PCA from './pca';
+import Renderer from './renderer'
+import PCA from './pca'
 
-export default {Renderer, PCA};
+export default {Renderer, PCA}
