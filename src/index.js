@@ -1,4 +1,5 @@
-import Renderer from './renderer'
-import PCA from './pca'
+const {Renderer} = require('./renderer')
+const {PCA} = require('./pca')
 
-export default {Renderer, PCA}
+exports.Renderer = Renderer
+exports.PCA = PCA

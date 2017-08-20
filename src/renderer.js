@@ -1,36 +1,30 @@
-import d3 from 'd3'
+const d3 = require('d3')
 
 const render = ({index1, index2, width, height, margin, scoreColor, loadingColor, leadColor, loadingOpacity, textSize, circleR}) => {
   return (selection) => {
     selection.each(function ({loadings, scores}) {
       const svg = d3.select(this)
-        .attr({
-          width: width + 2 * margin + 100,
-          height: height + 2 * margin
-        })
+        .attr('width', width + 2 * margin + 100)
+        .attr('height', height + 2 * margin)
       svg
         .append('defs')
         .append('marker')
-        .attr({
-          id: 'arrowhead',
-          refX: 0,
-          refY: 6,
-          markerWidth: 12,
-          markerHeight: 12,
-          orient: 'auto'
-        })
+        .attr('id', 'arrowhead')
+        .attr('refX', 0)
+        .attr('refY', 6)
+        .attr('markerWidth', 12)
+        .attr('markerHeight', 12)
+        .attr('orient', 'auto')
         .append('path')
-        .attr({
-          d: 'M 0,0 V 12 L12,6 Z',
-          fill: loadingColor
-        })
+        .attr('d', 'M 0,0 V 12 L12,6 Z')
+        .attr('fill', loadingColor)
 
       const g = svg.append('g')
         .classed('plot-area', true)
         .attr('transform', 'translate(' + margin + ',' + margin + ')')
 
-      const drag = d3.behavior.drag()
-        .on('dragstart', (d) => {
+      const drag = d3.drag()
+        .on('start', (d) => {
           const mouse = d3.mouse(g.node())
           d.x0 = mouse[0]
           d.y0 = mouse[1]
@@ -41,28 +35,24 @@ const render = ({index1, index2, width, height, margin, scoreColor, loadingColor
           const xd = +text.attr('x') + mouse[0] - d.x0
           const yd = +text.attr('y') + mouse[1] - d.y0
           text
-            .attr({
-              x: xd,
-              y: yd
-            })
+            .attr('x', xd)
+            .attr('y', yd)
           g
             .selectAll('line.lead')
             .filter((d2) => d === d2)
-            .attr({
-              x2: xd,
-              y2: yd
-            })
+            .attr('x2', xd)
+            .attr('y2', yd)
           d.x0 = mouse[0]
           d.y0 = mouse[1]
         })
 
       const scoreXMax = d3.max(scores, (d) => Math.abs(d.value.x))
-      const scoreXScale = d3.scale.linear()
+      const scoreXScale = d3.scaleLinear()
         .domain([-scoreXMax, scoreXMax])
         .range([0, width])
         .nice()
       const scoreYMax = d3.max(scores, (d) => Math.abs(d.value.y))
-      const scoreYScale = d3.scale.linear()
+      const scoreYScale = d3.scaleLinear()
         .domain([-scoreYMax, scoreYMax])
         .range([height, 0])
         .nice()
@@ -77,41 +67,35 @@ const render = ({index1, index2, width, height, margin, scoreColor, loadingColor
       scoresEnterSelection
         .append('line')
         .classed('lead', true)
-        .attr({
-          x1: (d) => scoreXScale(d.value.x),
-          y1: (d) => scoreYScale(d.value.y),
-          x2: (d) => scoreXScale(d.value.x),
-          y2: (d) => scoreYScale(d.value.y),
-          stroke: leadColor
-        })
+        .attr('x1', (d) => scoreXScale(d.value.x))
+        .attr('y1', (d) => scoreYScale(d.value.y))
+        .attr('x2', (d) => scoreXScale(d.value.x))
+        .attr('y2', (d) => scoreYScale(d.value.y))
+        .attr('stroke', leadColor)
       scoresEnterSelection
         .append('circle')
-        .attr({
-          cx: (d) => scoreXScale(d.value.x),
-          cy: (d) => scoreYScale(d.value.y),
-          r: circleR,
-          fill: scoreColor
-        })
+        .attr('cx', (d) => scoreXScale(d.value.x))
+        .attr('cy', (d) => scoreYScale(d.value.y))
+        .attr('r', circleR)
+        .attr('fill', scoreColor)
       scoresEnterSelection
         .append('text')
         .text((d) => d.key)
-        .attr({
-          x: (d) => scoreXScale(d.value.x),
-          y: (d) => scoreYScale(d.value.y),
-          dx: circleR,
-          stroke: scoreColor,
-          'font-size': textSize
-        })
+        .attr('x', (d) => scoreXScale(d.value.x))
+        .attr('y', (d) => scoreYScale(d.value.y))
+        .attr('dx', circleR)
+        .attr('stroke', scoreColor)
+        .attr('font-size', textSize)
         .style('cursor', 'move')
         .call(drag)
 
       const loadingXMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.x)))
-      const loadingXScale = d3.scale.linear()
+      const loadingXScale = d3.scaleLinear()
         .domain([-loadingXMax, loadingXMax])
         .range([0, width])
         .nice()
       const loadingYMax = Math.abs(d3.max(loadings, (d) => Math.abs(d.value.y)))
-      const loadingYScale = d3.scale.linear()
+      const loadingYScale = d3.scaleLinear()
         .domain([-loadingYMax, loadingYMax])
         .range([height, 0])
         .nice()
@@ -126,63 +110,53 @@ const render = ({index1, index2, width, height, margin, scoreColor, loadingColor
       loadingsEnterSelection
         .append('line')
         .classed('lead', true)
-        .attr({
-          x1: (d) => loadingXScale(d.value.x),
-          y1: (d) => loadingYScale(d.value.y),
-          x2: (d) => loadingXScale(d.value.x),
-          y2: (d) => loadingYScale(d.value.y),
-          stroke: leadColor
-        })
+        .attr('x1', (d) => loadingXScale(d.value.x))
+        .attr('y1', (d) => loadingYScale(d.value.y))
+        .attr('x2', (d) => loadingXScale(d.value.x))
+        .attr('y2', (d) => loadingYScale(d.value.y))
+        .attr('stroke', leadColor)
       loadingsEnterSelection
         .append('line')
         .classed('arrow', true)
-        .attr({
-          x1: loadingXScale(0),
-          y1: loadingYScale(0),
-          x2: (d) => loadingXScale(d.value.x),
-          y2: (d) => loadingYScale(d.value.y),
-          stroke: loadingColor,
-          opacity: loadingOpacity,
-          'marker-end': 'url(#arrowhead)'
-        })
+        .attr('x1', loadingXScale(0))
+        .attr('y1', loadingYScale(0))
+        .attr('x2', (d) => loadingXScale(d.value.x))
+        .attr('y2', (d) => loadingYScale(d.value.y))
+        .attr('stroke', loadingColor)
+        .attr('opacity', loadingOpacity)
+        .attr('marker-end', 'url(#arrowhead)')
       loadingsEnterSelection
         .append('text')
         .text((d) => d.key)
-        .attr({
-          x: (d) => loadingXScale(d.value.x),
-          y: (d) => loadingYScale(d.value.y),
-          dx: 8,
-          dy: 4,
-          stroke: loadingColor,
-          opacity: loadingOpacity,
-          'font-size': textSize
-        })
+        .attr('x', (d) => loadingXScale(d.value.x))
+        .attr('y', (d) => loadingYScale(d.value.y))
+        .attr('dx', 8)
+        .attr('dy', 4)
+        .attr('stroke', loadingColor)
+        .attr('opacity', loadingOpacity)
+        .attr('font-size', textSize)
         .style('cursor', 'move')
         .call(drag)
 
-      const loadingXAxis = d3.svg.axis()
-        .orient('bottom')
+      const loadingXAxis = d3.axisBottom()
         .scale(loadingXScale)
       svg.append('g')
         .classed('loading-axis', true)
         .attr('transform', 'translate(' + margin + ',' + (margin + height) + ')')
         .call(loadingXAxis)
-      const loadingYAxis = d3.svg.axis()
-        .orient('left')
+      const loadingYAxis = d3.axisLeft()
         .scale(loadingYScale)
       svg.append('g')
         .classed('loading-axis', true)
         .attr('transform', 'translate(' + margin + ',' + margin + ')')
         .call(loadingYAxis)
-      const scoreXAxis = d3.svg.axis()
-        .orient('top')
+      const scoreXAxis = d3.axisTop()
         .scale(scoreXScale)
       svg.append('g')
         .classed('score-axis', true)
         .attr('transform', 'translate(' + margin + ',' + margin + ')')
         .call(scoreXAxis)
-      const scoreYAxis = d3.svg.axis()
-        .orient('right')
+      const scoreYAxis = d3.axisRight()
         .scale(scoreYScale)
       svg.append('g')
         .classed('score-axis', true)
@@ -202,10 +176,8 @@ const render = ({index1, index2, width, height, margin, scoreColor, loadingColor
           stroke: loadingColor
         })
       svg.selectAll('g.score-axis path.domain')
-        .attr({
-          fill: 'none',
-          stroke: scoreColor
-        })
+        .attr('fill', 'none')
+        .attr('stroke', scoreColor)
     })
   }
 }
@@ -284,4 +256,4 @@ class Renderer {
   }
 }
 
-export default Renderer
+exports.Renderer = Renderer

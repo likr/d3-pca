@@ -1,4 +1,4 @@
-import emlapack from 'emlapack'
+const emlapack = require('./emlapack-custom')
 
 const dsyrk = emlapack.cwrap('f2c_dsyrk', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'])
 const dsyev = emlapack.cwrap('dsyev_', null, ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'])
@@ -138,4 +138,4 @@ class PCA {
   }
 }
 
-export default PCA
+exports.PCA = PCA
